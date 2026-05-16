@@ -1,0 +1,19 @@
+name: Auth Service CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+    paths:
+      - 'services/auth-service/**'
+      - '.github/workflows/**'
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  auth-pipeline:
+    uses: ./.github/workflows/reusable/reusable-java-build.yml
+    secrets: inherit
