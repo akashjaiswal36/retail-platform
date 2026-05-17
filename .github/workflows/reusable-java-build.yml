@@ -7,9 +7,18 @@ jobs:
   build-test-scan:
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
     defaults:
       run:
         working-directory: services/auth-service
+
+    env:
+      AWS_REGION: ap-south-1
+      ECR_REPOSITORY: auth-service
+      AWS_ACCOUNT_ID: 562887205095
 
     steps:
       - name: Checkout source
@@ -53,13 +62,29 @@ jobs:
         with:
           path: services/auth-service
 
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::562887205095:role/GitHubActionsECRPushRole
+          aws-region: ap-south-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Build Docker Image
-        run: docker build -t retail/auth-service:${{ github.sha }} .
+        run: |
+          docker build -t $ECR_REPOSITORY:${{ github.sha }} .
+          docker tag $ECR_REPOSITORY:${{ github.sha }} \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:${{ github.sha }}
 
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: retail/auth-service:${{ github.sha }}
+          image-ref: 562887205095.dkr.ecr.ap-south-1.amazonaws.com/auth-service:${{ github.sha }}
           format: table
           exit-code: 0
           severity: CRITICAL
+
+      - name: Push Docker Image to ECR
+        run: |
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:${{ github.sha }}
