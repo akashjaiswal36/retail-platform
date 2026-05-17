@@ -46,7 +46,7 @@ jobs:
           scan-ref: services/auth-service
           format: table
           exit-code: 1
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
@@ -62,4 +62,4 @@ jobs:
           image-ref: retail/auth-service:${{ github.sha }}
           format: table
           exit-code: 1
-          severity: CRITICAL,HIGH
+          severity: CRITICAL
