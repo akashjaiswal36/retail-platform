@@ -15,6 +15,15 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: services/auth-service
+          format: table
+          exit-code: 0
+          severity: CRITICAL
+
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
@@ -38,15 +47,6 @@ jobs:
           -Dsonar.organization=akashjaiswal36
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
-
-      - name: Trivy Filesystem Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: services/auth-service
-          format: table
-          exit-code: 0
-          severity: CRITICAL
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
