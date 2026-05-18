@@ -1,0 +1,60 @@
+name: Auth Service CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+    paths:
+      - 'services/auth-service/**'
+      - '.github/workflows/**'
+      - 'deploy/helm/auth-service/**'
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-test-scan:
+    uses: ./.github/workflows/reusable-java-build.yml
+    secrets: inherit
+
+  deploy:
+    needs: build-test-scan
+    if: github.ref == 'refs/heads/feature/auth-service'
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ap-south-1
+      EKS_CLUSTER_NAME: eks-demo-cluster
+      RELEASE_NAME: auth-service
+      NAMESPACE: retail-app
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::562887205095:role/GitHubActionsECRPushRole
+          aws-region: ap-south-1
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region ap-south-1 \
+            --name eks-demo-cluster
+
+      - name: Deploy to EKS
+        run: |
+          helm upgrade --install auth-service ./deploy/helm/auth-service \
+            --namespace retail-app \
+            --set image.tag=${{ github.sha }}

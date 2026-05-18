@@ -1,0 +1,90 @@
+name: Reusable Java Build Pipeline
+
+on:
+  workflow_call:
+
+jobs:
+  build-test-scan:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        working-directory: services/auth-service
+
+    env:
+      AWS_REGION: ap-south-1
+      ECR_REPOSITORY: auth-service
+      AWS_ACCOUNT_ID: 562887205095
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: services/auth-service
+          format: table
+          exit-code: 0
+          severity: CRITICAL
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Build + Unit Tests
+        run: mvn clean verify
+
+      - name: Upload JaCoCo Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: services/auth-service/target/site/jacoco
+
+      - name: SonarCloud Scan
+        run: >
+          mvn sonar:sonar
+          -Dsonar.projectKey=akashjaiswal36_retail-platform
+          -Dsonar.organization=akashjaiswal36
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: services/auth-service
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::562887205095:role/GitHubActionsECRPushRole
+          aws-region: ap-south-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t $ECR_REPOSITORY:${{ github.sha }} .
+          docker tag $ECR_REPOSITORY:${{ github.sha }} \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:${{ github.sha }}
+
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 562887205095.dkr.ecr.ap-south-1.amazonaws.com/auth-service:${{ github.sha }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL
+
+      - name: Push Docker Image to ECR
+        run: |
+          docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:${{ github.sha }}

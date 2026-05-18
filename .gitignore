@@ -1,0 +1,64 @@
+# Java
+target/
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+.next/
+
+# Environment
+.env
+.env.*
+
+# Docker
+docker-data/
+
+# Sonar
+.sonar/
+
+# Coverage
+coverage/
+jacoco.exec
+
+# Trivy
+trivy-report/
+*.trivy
+
+# SBOM
+sbom/
+*.bom.json
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+*.tfvars
+
+# Maven
+dependency-reduced-pom.xml
+
+# Misc
+tmp/
+*.swp
