@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - main
-      - feature/**
     paths:
       - 'services/auth-service/**'
-      - '.github/workflows/**'
       - 'deploy/helm/auth-service/**'
 
   pull_request:
