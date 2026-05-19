@@ -1,4 +1,4 @@
-package com.retail.auth.dto;
+package com.retail.order.dto;
 
 import java.math.BigDecimal;
 

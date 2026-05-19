@@ -1,4 +1,4 @@
-package com.retail.auth.exception;
+package com.retail.order.exception;
 
 public class BadRequestException extends RuntimeException {
     public BadRequestException(String message) {

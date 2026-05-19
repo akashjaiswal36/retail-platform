@@ -1,8 +1,8 @@
-package com.retail.auth.controller;
+package com.retail.order.controller;
 
-import com.retail.auth.dto.OrderRequest;
-import com.retail.auth.entity.Order;
-import com.retail.auth.service.OrderService;
+import com.retail.order.dto.OrderRequest;
+import com.retail.order.entity.Order;
+import com.retail.order.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 

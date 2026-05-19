@@ -1,9 +1,9 @@
-package com.retail.auth.service;
+package com.retail.order.service;
 
-import com.retail.auth.dto.OrderRequest;
-import com.retail.auth.entity.Order;
-import com.retail.auth.repository.OrderRepository;
-import com.retail.auth.exception.ResourceNotFoundException;
+import com.retail.order.dto.OrderRequest;
+import com.retail.order.entity.Order;
+import com.retail.order.repository.OrderRepository;
+import com.retail.order.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

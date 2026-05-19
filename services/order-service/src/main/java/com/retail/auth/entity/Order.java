@@ -1,4 +1,4 @@
-package com.retail.auth.entity;
+package com.retail.order.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
