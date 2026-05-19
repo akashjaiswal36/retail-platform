@@ -1,15 +1,6 @@
 name: Auth Service CI/CD
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'services/auth-service/**'
-      - 'deploy/helm/auth-service/**'
-      - '.github/workflows/auth-ci.yml'
-      - '.github/workflows/reusable-java-build.yml'
-
   push:
     branches:
       - main
