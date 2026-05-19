@@ -30,7 +30,7 @@ jobs:
 
   deploy:
     needs: build-test-scan
-    if: github.ref == 'refs/heads/feature/auth-service'
+    if: github.ref == 'refs/heads/feature/main'
     runs-on: ubuntu-latest
 
     env:
