@@ -19,6 +19,9 @@ permissions:
 jobs:
   build-test-scan:
     uses: ./.github/workflows/reusable-java-build.yml
+    with:
+      service-path: services/auth-service
+      ecr-repository: auth-service
     secrets: inherit
 
   deploy:
