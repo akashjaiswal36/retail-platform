@@ -28,7 +28,7 @@ jobs:
 
   deploy:
     needs: build-test-scan
-    if: github.ref == 'refs/heads/feature/order-service'
+    if: success()
     runs-on: ubuntu-latest
 
     env:
