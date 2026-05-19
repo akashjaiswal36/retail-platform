@@ -45,6 +45,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
 
+
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
