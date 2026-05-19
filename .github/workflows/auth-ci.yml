@@ -7,10 +7,17 @@ on:
     paths:
       - 'services/auth-service/**'
       - 'deploy/helm/auth-service/**'
+      - '.github/workflows/auth-ci.yml'
+      - '.github/workflows/reusable-java-build.yml'
 
   pull_request:
     branches:
       - main
+    paths:
+      - 'services/auth-service/**'
+      - 'deploy/helm/auth-service/**'
+      - '.github/workflows/auth-ci.yml'
+      - '.github/workflows/reusable-java-build.yml'
 
 permissions:
   id-token: write
