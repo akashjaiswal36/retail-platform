@@ -1,7 +1,7 @@
 name: Auth Service CI/CD
 
 on:
-  push:
+  pull_request:
     branches:
       - main
     paths:
@@ -10,7 +10,7 @@ on:
       - '.github/workflows/auth-ci.yml'
       - '.github/workflows/reusable-java-build.yml'
 
-  pull_request:
+  push:
     branches:
       - main
     paths:
@@ -33,7 +33,7 @@ jobs:
 
   deploy:
     needs: build-test-scan
-    if: github.ref == 'refs/heads/feature/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     env:
