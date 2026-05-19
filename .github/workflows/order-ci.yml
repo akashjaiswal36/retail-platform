@@ -4,15 +4,11 @@ on:
   push:
     branches:
       - main
-      - feature/**
     paths:
       - 'services/order-service/**'
-      - '.github/workflows/order-ci.yml'
       - 'deploy/helm/order-service/**'
-
-  pull_request:
-    branches:
-      - main
+      - '.github/workflows/order-ci.yml'
+      - '.github/workflows/reusable-java-build.yml'
 
 permissions:
   id-token: write
@@ -28,7 +24,7 @@ jobs:
 
   deploy:
     needs: build-test-scan
-    if: success()
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     env:
