@@ -23,7 +23,6 @@ function App() {
     totalAmount: 0
   });
 
-  const [token, setToken] = useState("");
   const [message, setMessage] = useState("");
 
   const register = async () => {
@@ -40,11 +39,9 @@ function App() {
     try {
       const res = await axios.post(`${API}/v1/auth/login`, loginData);
 
-      console.log("LOGIN RESPONSE:", res.data);
-
       const jwtToken = res.data.token;
 
-      setToken(jwtToken);
+      localStorage.setItem("token", jwtToken);
 
       setMessage("Login successful");
     } catch (err) {
@@ -55,14 +52,19 @@ function App() {
 
   const createOrder = async () => {
     try {
-      console.log("TOKEN USED:", token);
+      const jwtToken = localStorage.getItem("token");
+
+      if (!jwtToken) {
+        setMessage("Please login first");
+        return;
+      }
 
       const res = await axios.post(
         `${API}/v1/users/test/create-order`,
         orderData,
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${jwtToken}`
           }
         }
       );
