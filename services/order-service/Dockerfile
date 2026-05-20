@@ -7,6 +7,7 @@ WORKDIR /build
 
 # dependency caching
 COPY pom.xml .
+
 RUN mvn dependency:go-offline
 
 # source
