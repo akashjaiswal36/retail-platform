@@ -1,0 +1,24 @@
+replicaCount: 2
+
+image:
+  repository: 562887205095.dkr.ecr.ap-south-1.amazonaws.com/frontend
+  pullPolicy: IfNotPresent
+  tag: v2
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
