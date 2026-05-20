@@ -3,7 +3,7 @@ replicaCount: 2
 image:
   repository: 562887205095.dkr.ecr.ap-south-1.amazonaws.com/gateway-service
   pullPolicy: IfNotPresent
-  tag: latest
+  tag: v2
 
 service:
   type: ClusterIP
