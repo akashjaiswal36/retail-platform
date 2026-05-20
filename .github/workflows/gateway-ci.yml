@@ -1,13 +1,13 @@
-name: Auth Service CI/CD
+name: Gateway Service CI/CD
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'services/auth-service/**'
-      - 'deploy/helm/auth-service/**'
-      - '.github/workflows/auth-ci.yml'
+      - 'services/gateway-service/**'
+      - 'deploy/helm/gateway-service/**'
+      - '.github/workflows/gateway-ci.yml'
       - '.github/workflows/reusable-java-build.yml'
 
 permissions:
@@ -18,8 +18,8 @@ jobs:
   build-test-scan:
     uses: ./.github/workflows/reusable-java-build.yml
     with:
-      service-path: services/auth-service
-      ecr-repository: auth-service
+      service-path: services/gateway-service
+      ecr-repository: gateway-service
     secrets: inherit
 
   deploy:
@@ -30,7 +30,7 @@ jobs:
     env:
       AWS_REGION: ap-south-1
       EKS_CLUSTER_NAME: eks-demo-cluster
-      RELEASE_NAME: auth-service
+      RELEASE_NAME: gateway-service
       NAMESPACE: retail-app
 
     steps:
@@ -46,7 +46,6 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
 
-
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
@@ -55,6 +54,6 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          helm upgrade --install auth-service ./deploy/helm/auth-service \
+          helm upgrade --install gateway-service ./deploy/helm/gateway-service \
             --namespace retail-app \
             --set image.tag=${{ github.sha }}
