@@ -2,6 +2,13 @@ name: Reusable Java Build Pipeline
 
 on:
   workflow_call:
+    inputs:
+      service-path:
+        required: true
+        type: string
+      ecr-repository:
+        required: true
+        type: string
 
 jobs:
   build-test-scan:
@@ -13,11 +20,11 @@ jobs:
 
     defaults:
       run:
-        working-directory: services/auth-service
+        working-directory: ${{ inputs.service-path }}
 
     env:
       AWS_REGION: ap-south-1
-      ECR_REPOSITORY: auth-service
+      ECR_REPOSITORY: ${{ inputs.ecr-repository }}
       AWS_ACCOUNT_ID: 562887205095
 
     steps:
@@ -28,7 +35,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
-          scan-ref: services/auth-service
+          scan-ref: ${{ inputs.service-path }}
           format: table
           exit-code: 0
           severity: CRITICAL
@@ -46,8 +53,8 @@ jobs:
       - name: Upload JaCoCo Report
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-report
-          path: services/auth-service/target/site/jacoco
+          name: jacoco-report-${{ inputs.ecr-repository }}
+          path: ${{ inputs.service-path }}/target/site/jacoco
 
       - name: SonarCloud Scan
         run: >
@@ -60,9 +67,9 @@ jobs:
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          path: services/auth-service
+          path: ${{ inputs.service-path }}
 
-      - name: Configure AWS Credentials (OIDC)
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::562887205095:role/GitHubActionsECRPushRole
@@ -80,7 +87,7 @@ jobs:
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 562887205095.dkr.ecr.ap-south-1.amazonaws.com/auth-service:${{ github.sha }}
+          image-ref: 562887205095.dkr.ecr.ap-south-1.amazonaws.com/${{ inputs.ecr-repository }}:${{ github.sha }}
           format: table
           exit-code: 0
           severity: CRITICAL

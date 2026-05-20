@@ -1,0 +1,27 @@
+replicaCount: 2
+
+image:
+  repository: 562887205095.dkr.ecr.ap-south-1.amazonaws.com/order-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: order-service
+
+service:
+  type: ClusterIP
+  port: 8082
+  targetPort: 8082
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+app:
+  profile: dev
+
+ingress:
+  enabled: false
