@@ -23,7 +23,7 @@ resources:
     cpu: 500m
     memory: 1Gi
 
-replicaCount: 2
+replicaCount: 1
 
 hpa:
   enabled: true
