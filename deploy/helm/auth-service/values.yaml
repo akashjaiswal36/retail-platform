@@ -2,7 +2,7 @@ namespace: retail-app
 
 image:
   repository: 562887205095.dkr.ecr.ap-south-1.amazonaws.com/auth-service
-  tag: v2
+  tag: latest
   pullPolicy: IfNotPresent
 
 service:
