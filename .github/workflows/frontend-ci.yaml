@@ -1,13 +1,13 @@
-name: Auth Service CI/CD
+name: Frontend Service CI/CD
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'services/auth-service/**'
-      - 'deploy/helm/auth-service/**'
-      - '.github/workflows/auth-ci.yml'
+      - 'services/frontend/**'
+      - 'deploy/helm/frontend/**'
+      - '.github/workflows/frontend-ci.yml'
       - '.github/workflows/reusable-java-build.yml'
 
 permissions:
@@ -18,8 +18,8 @@ jobs:
   build-test-scan:
     uses: ./.github/workflows/reusable-java-build.yml
     with:
-      service-path: services/auth-service
-      ecr-repository: auth-service
+      service-path: services/frontend-service
+      ecr-repository: frontend
     secrets: inherit
 
   deploy:
@@ -55,6 +55,6 @@ jobs:
 
       - name: Deploy to EKS
         run: |
-          helm upgrade --install auth-service ./deploy/helm/auth-service \
+          helm upgrade --install frontend ./deploy/helm/frontend \
             --namespace retail-app \
             --set image.tag=${{ github.sha }}
