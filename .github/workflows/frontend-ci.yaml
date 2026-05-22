@@ -18,7 +18,7 @@ jobs:
   build-test-scan:
     uses: ./.github/workflows/reusable-java-build.yml
     with:
-      service-path: services/frontend-service
+      service-path: services/frontend
       ecr-repository: frontend
     secrets: inherit
 
