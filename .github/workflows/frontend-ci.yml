@@ -15,22 +15,14 @@ permissions:
   contents: read
 
 jobs:
-  build-test-scan:
-    uses: ./.github/workflows/reusable-java-build.yml
-    with:
-      service-path: services/frontend
-      ecr-repository: frontend
-    secrets: inherit
-
   deploy:
-    needs: build-test-scan
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     env:
       AWS_REGION: ap-south-1
       EKS_CLUSTER_NAME: eks-demo-cluster
-      RELEASE_NAME: auth-service
+      RELEASE_NAME: frontend-service
       NAMESPACE: retail-app
 
     steps:
@@ -42,6 +34,32 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::562887205095:role/GitHubActionsECRPushRole
           aws-region: ap-south-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependency
+        working-directory: services/frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: services/frontend
+        run: npm run build
+
+      - name: Build Docker image
+        working-directory: services/frontend
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
       - name: Install Helm
         uses: azure/setup-helm@v4
@@ -57,4 +75,5 @@ jobs:
         run: |
           helm upgrade --install frontend ./deploy/helm/frontend \
             --namespace retail-app \
+            --set image.repository=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }} \
             --set image.tag=${{ github.sha }}
