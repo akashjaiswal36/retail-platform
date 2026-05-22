@@ -21,6 +21,7 @@ jobs:
 
     env:
       AWS_REGION: ap-south-1
+      ECR_REPOSITORY: frontend
       EKS_CLUSTER_NAME: eks-demo-cluster
       RELEASE_NAME: frontend-service
       NAMESPACE: retail-app
