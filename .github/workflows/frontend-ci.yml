@@ -72,6 +72,7 @@ jobs:
             --region ap-south-1 \
             --name eks-demo-cluster
 
+
       - name: Deploy to EKS
         run: |
           helm upgrade --install frontend ./deploy/helm/frontend \
