@@ -46,15 +46,16 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
 
-      - name: Who am I?
-        run: |
-          aws sts get-caller-identity
 
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
             --region ap-south-1 \
             --name eks-demo-cluster
+
+      - name: Who am I?
+        run: |
+          aws sts get-caller-identity
 
       - name: Deploy to EKS
         run: |

@@ -72,6 +72,9 @@ jobs:
             --region ap-south-1 \
             --name eks-demo-cluster
 
+      - name: Who am I?
+        run: |
+          aws sts get-caller-identity
 
       - name: Deploy to EKS
         run: |
