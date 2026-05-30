@@ -37,9 +37,12 @@ function App() {
 
   const login = async () => {
     try {
-      const res = await axios.post(`${API}/v1/auth/login`, loginData);
+      const res = await axios.post(
+        `${API}/v1/auth/login`,
+        loginData
+      );
 
-      const jwtToken = res.data.token;
+      const jwtToken = res.data.accessToken;
 
       localStorage.setItem("token", jwtToken);
 
