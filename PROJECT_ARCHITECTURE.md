@@ -36,7 +36,7 @@ Auth Service / Order Service
 
 ↓
 
-Amazon RDS MySQL
+Amazon RDS Postgresql
 
 ---
 
@@ -110,7 +110,7 @@ auth-service
 
 ### Database
 
-Amazon RDS MySQL
+Amazon RDS PostgreSQL
 
 ---
 
@@ -131,7 +131,7 @@ Amazon RDS MySQL
 
 ### Database
 
-Amazon RDS MySQL
+Amazon RDS PostgreSQL
 
 ---
 
@@ -259,7 +259,7 @@ ClusterIP
 
 # Database Layer
 
-## Amazon RDS MySQL
+## Amazon RDS Postgresql
 
 ### Purpose
 
@@ -618,6 +618,6 @@ Automatic scaling based on CPU utilization.
 
 # Interview Explanation (2-3 Minutes)
 
-"In my recent project, I worked on a cloud-native retail platform deployed on Amazon EKS. The application consists of Spring Boot microservices including Gateway, Auth, and Order services. Traffic enters through Route53 and an AWS Application Load Balancer managed by AWS Load Balancer Controller. Kubernetes Ingress routes requests to internal ClusterIP services. The backend services communicate with Amazon RDS MySQL and retrieve secrets from AWS Secrets Manager using External Secrets Operator.
+"In my recent project, I worked on a cloud-native retail platform deployed on Amazon EKS. The application consists of Spring Boot microservices including Gateway, Auth, and Order services. Traffic enters through Route53 and an AWS Application Load Balancer managed by AWS Load Balancer Controller. Kubernetes Ingress routes requests to internal ClusterIP services. The backend services communicate with Amazon RDS PostgreSQL and retrieve secrets from AWS Secrets Manager using External Secrets Operator.
 
 The complete infrastructure including VPC, EKS, RDS, IAM roles, and networking components is provisioned using Terraform. CI/CD is implemented using GitHub Actions, Docker, Amazon ECR, and Helm. For observability, we expose application metrics using Spring Boot Actuator and Micrometer, collect metrics through Prometheus, visualize them using Grafana, and manage alerts through Alertmanager. Prometheus data is stored on persistent EBS-backed volumes and application secrets are centrally managed through AWS Secrets Manager."
