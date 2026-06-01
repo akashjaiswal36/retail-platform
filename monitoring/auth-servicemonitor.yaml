@@ -15,4 +15,5 @@ spec:
   endpoints:
     - port: http
       path: /actuator/prometheus
+      targetPort: 8081
       interval: 15s
