@@ -31,14 +31,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Trivy Filesystem Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: ${{ inputs.service-path }}
-          format: table
-          exit-code: 0
-          severity: CRITICAL
+
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -46,6 +39,18 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: maven
+      
+      - name: Download Maven Dependencies
+        run: mvn dependency:resolve
+
+      - name: Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ inputs.service-path }}
+          format: table
+          exit-code: 0
+          severity: CRITICAL
 
       - name: Build + Unit Tests
         run: mvn clean verify
