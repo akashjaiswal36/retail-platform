@@ -33,5 +33,5 @@ hpa:
   cpuUtilization: 70
 
 secrets:
-  dbSecretName: retail/auth/dev/ddb
+  dbSecretName: retail/auth/dev/db
   appSecretName: retail/auth/dev/app
