@@ -45,17 +45,17 @@ spec:
                   name: auth-db-secret
                   key: DB_NAME
 
-              - name: DB_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: retail-db-secret
-                    key: DB_USERNAME
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: retail-db-secret
+                  key: DB_USERNAME
 
-              - name: DB_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: retail-db-secret
-                    key: DB_PASSWORD
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: retail-db-secret
+                  key: DB_PASSWORD
 
             - name: JWT_SECRET
               valueFrom:
