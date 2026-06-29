@@ -44,7 +44,7 @@ jobs:
         run: mvn dependency:resolve
 
       - name: Trivy Filesystem Scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
           scan-ref: ${{ inputs.service-path }}
