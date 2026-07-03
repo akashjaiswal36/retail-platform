@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'services/order-service/**'
-      - 'deploy/helm/order-service/**'
       - '.github/workflows/order-ci.yml'
       - '.github/workflows/reusable-java-build.yml'
 
@@ -27,37 +26,40 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    env:
-      AWS_REGION: ap-south-1
-      EKS_CLUSTER_NAME: eks-demo-cluster
-      RELEASE_NAME: order-service
-      NAMESPACE: retail-app
-
+ 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::562887205095:role/GitHubActionsECRPushRole
-          aws-region: ap-south-1
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-
-      - name: Update kubeconfig
+      - name: Clone GitOps repository
         run: |
-          aws eks update-kubeconfig \
-            --region ap-south-1 \
-            --name eks-demo-cluster
+          git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/akashjaiswal36/retail-gitops.git
 
-      - name: Who am I?
+      - name: Verify GitOps repository
         run: |
-          aws sts get-caller-identity
+          ls -la
+          ls -R retail-gitops
+          
 
-      - name: Deploy to EKS
+      - name: Update Helm Values
         run: |
-          helm upgrade --install order-service ./deploy/helm/order-service \
-            --namespace retail-app \
-            --set image.tag=${{ github.sha }}
+          cd retail-gitops
+
+          sed -i -E "s/^( *tag:).*/\1 ${{ github.sha }}/" apps/order-service/values.yaml
+
+          echo "Updated values.yaml"
+
+          cat apps/order-service/values.yaml
+
+      - name: Commit and Push GitOps changes
+        run: |
+          cd retail-gitops
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add apps/order-service/values.yaml
+
+          git commit -m "Update order-service image to ${{ github.sha }}" || echo "No changes"
+
+          git push
