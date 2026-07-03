@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'services/gateway-service/**'
-      - 'deploy/helm/gateway-service/**'
       - '.github/workflows/gateway-ci.yml'
       - '.github/workflows/reusable-java-build.yml'
 
@@ -28,37 +27,26 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    env:
-      AWS_REGION: ap-south-1
-      EKS_CLUSTER_NAME: eks-demo-cluster
-      RELEASE_NAME: gateway-service
-      NAMESPACE: retail-app
-
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::562887205095:role/GitHubActionsECRPushRole
-          aws-region: ap-south-1
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-
-      - name: Update kubeconfig
+      - name: Clone GitOps repository
         run: |
-          aws eks update-kubeconfig \
-            --region ap-south-1 \
-            --name eks-demo-cluster
+          git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/akashjaiswal36/retail-gitops.git
 
-      - name: Who am I?
+      - name: Verify GitOps repository
         run: |
-          aws sts get-caller-identity
+          ls -la
+          ls -R retail-gitops
           
-      - name: Deploy to EKS
+
+      - name: Update Helm Values
         run: |
-          helm upgrade --install gateway-service ./deploy/helm/gateway-service \
-            --namespace retail-app \
-            --set image.tag=${{ github.sha }}
+          cd retail-gitops
+
+          sed -i -E "s/^( *tag:).*/\1 ${{ github.sha }}/" apps/gateway-service/values.yaml
+
+          echo "Updated values.yaml"
+
+          cat apps/gateway-service/values.yaml
