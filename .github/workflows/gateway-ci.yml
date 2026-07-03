@@ -50,3 +50,16 @@ jobs:
           echo "Updated values.yaml"
 
           cat apps/gateway-service/values.yaml
+
+      - name: Commit and Push GitOps changes
+        run: |
+          cd retail-gitops
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add apps/gateway-service/values.yaml
+
+          git commit -m "Update gateway-service image to ${{ github.sha }}" || echo "No changes"
+
+          git push
