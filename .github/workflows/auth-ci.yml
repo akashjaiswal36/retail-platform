@@ -36,8 +36,13 @@ jobs:
 
       - name: Clone GitOps repository
         run: |
-          https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/akashjaiswal36/retail-gitops.git
+          git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@github.com/akashjaiswal36/retail-gitops.git
 
+      - name: Verify GitOps repository
+        run: |
+          ls -la
+          ls -R retail-gitops
+          
       - name: Update Helm Values
         run: |
           cd retail-gitops
