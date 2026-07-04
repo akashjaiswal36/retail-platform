@@ -14,7 +14,6 @@ permissions:
   id-token: write
   contents: read
 
-
 jobs:
   build-test-scan:
     uses: ./.github/workflows/reusable-java-build.yml
@@ -42,7 +41,7 @@ jobs:
         run: |
           ls -la
           ls -R retail-gitops
-          
+
       - name: Update Helm Values
         run: |
           cd retail-gitops
