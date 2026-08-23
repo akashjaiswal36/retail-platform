@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gateway-ingress
+  namespace: retail-app
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/group.name: retail-platform
+    alb.ingress.kubernetes.io/group.order: "1"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /actuator/health
+spec:
+  rules:
+    - host: akash.buzz
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 8080
