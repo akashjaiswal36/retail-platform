@@ -81,7 +81,7 @@ function App() {
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>E‑Commerce Retail Platform Microservice Demo</h1>
+      <h1>E‑Commerce Retail Platform Microservice Demo..</h1>
 
       <h2>Register</h2>
       <input
