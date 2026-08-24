@@ -61,13 +61,13 @@ jobs:
           name: jacoco-report-${{ inputs.ecr-repository }}
           path: ${{ inputs.service-path }}/target/site/jacoco
 
-      - name: SonarCloud Scan
-        run: >
-          mvn sonar:sonar
-          -Dsonar.projectKey=akashjaiswal36_retail-platform
-          -Dsonar.organization=akashjaiswal36
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+    #  - name: SonarCloud Scan
+      #  run: >
+       #   mvn sonar:sonar
+        #  -Dsonar.projectKey=akashjaiswal36_retail-platform
+         # -Dsonar.organization=akashjaiswal36
+          #-Dsonar.host.url=https://sonarcloud.io
+          #-Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
