@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://retail-auth-postgres-dev.czc4u0888p6s.ap-south-1.rds.amazonaws.com:5432/retail_product_db?options=-c%20TimeZone=Asia/Kolkata}
     username: ${DB_USERNAME:retail_admin}
-    password: ${DB_PASSWORD:9bXaFcbJ%zT*Gk#cgJLe}
+    password: ${DB_PASSWORD:product_password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
