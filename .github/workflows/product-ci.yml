@@ -1,0 +1,63 @@
+name: Product Service CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/product-service/**'
+      - '.github/workflows/product-ci.yml'
+      - '.github/workflows/reusable-java-build.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-test-scan:
+    uses: ./.github/workflows/reusable-java-build.yml
+    with:
+      service-path: services/product-service
+      ecr-repository: product-service
+    secrets: inherit
+
+  deploy:
+    needs: build-test-scan
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Clone GitOps repository
+        run: |
+          git clone https://x-access-token:${{ secrets.GITOPS_TOKEN }}@GitHub.com/akashjaiswal36/retail-gitops.git
+
+      - name: Verify GitOps repository
+        run: |
+          ls -la
+          ls -R retail-gitops
+
+      - name: Update Helm Values
+        run: |
+          cd retail-gitops
+
+          sed -i -E "s/^( *tag:).*/\1 ${{ github.sha }}/" apps/product-service/values.yaml
+
+          echo "Updated values.yaml"
+
+          cat apps/product-service/values.yaml
+
+      - name: Commit and Push GitOps changes
+        run: |
+          cd retail-gitops
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add apps/product-service/values.yaml
+
+          git commit -m "Update product-service image to ${{ github.sha }}" || echo "No changes"
+
+          git push

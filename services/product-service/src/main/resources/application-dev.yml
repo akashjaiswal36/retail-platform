@@ -1,0 +1,32 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: product-service
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://retail-auth-postgres-dev.czc4u0888p6s.ap-south-1.rds.amazonaws.com:5432/retail_product_db?options=-c%20TimeZone=Asia/Kolkata}
+    username: ${DB_USERNAME:retail_admin}
+    password: ${DB_PASSWORD:9bXaFcbJ%zT*Gk#cgJLe}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+  metrics:
+    distribution:
+      percentiles-histogram:
+        "http.server.requests": true
