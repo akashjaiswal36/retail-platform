@@ -1,108 +1,103 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 
-const API = "/api";
+const API_BASE = "/api/v1";
 
 function App() {
+  const [products, setProducts] = useState([]);
+  const [message, setMessage] = useState("");
+
   const [registerData, setRegisterData] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    password: ""
+    password: "",
   });
 
   const [loginData, setLoginData] = useState({
     email: "",
-    password: ""
-  });
-
-  const [orderData, setOrderData] = useState({
-    customerName: "",
-    productName: "",
-    quantity: 1,
-    totalAmount: 0
+    password: "",
   });
 
   const [productData, setProductData] = useState({
     name: "",
     description: "",
-    price: 0,
-    quantity: 1
+    price: "",
+    quantity: "",
   });
 
-  const [products, setProducts] = useState([]);
-  const [message, setMessage] = useState("");
+  const [orderData, setOrderData] = useState({
+    customerName: "",
+    productId: "",
+    quantity: 1,
+    totalAmount: "",
+  });
 
   // =========================
-  // Products
+  // Load Products
   // =========================
 
-  const getProducts = async () => {
+  const loadProducts = async () => {
     try {
-      const res = await axios.get(`${API}/v1/products`);
-      setProducts(res.data);
-    } catch (err) {
-      console.log(err.response?.data);
+      const response = await fetch(`${API_BASE}/products`);
+
+      if (!response.ok) {
+        throw new Error("Failed to load products");
+      }
+
+      const data = await response.json();
+      setProducts(data);
+
+      // Clear selected product if it no longer exists
+      if (
+        orderData.productId &&
+        !data.some((product) => product.id === Number(orderData.productId))
+      ) {
+        setOrderData((prev) => ({
+          ...prev,
+          productId: "",
+          totalAmount: "",
+        }));
+      }
+    } catch (error) {
       setMessage("Failed to load products");
+      console.error(error);
     }
   };
 
-  const createProduct = async () => {
-    try {
-      const res = await axios.post(
-        `${API}/v1/products`,
-        productData
-      );
-
-      setMessage("Product created successfully");
-
-      setProductData({
-        name: "",
-        description: "",
-        price: 0,
-        quantity: 1
-      });
-
-      setProducts([...products, res.data]);
-    } catch (err) {
-      console.log(err.response?.data);
-      setMessage("Product creation failed");
-    }
-  };
-
-  const deleteProduct = async (id) => {
-    try {
-      await axios.delete(`${API}/v1/products/${id}`);
-
-      setProducts(products.filter((product) => product.id !== id));
-
-      setMessage("Product deleted successfully");
-    } catch (err) {
-      console.log(err.response?.data);
-      setMessage("Product deletion failed");
-    }
-  };
-
-  // Load products when frontend starts
   useEffect(() => {
-    getProducts();
+    loadProducts();
   }, []);
 
   // =========================
   // Register
   // =========================
 
-  const register = async () => {
+  const registerUser = async () => {
     try {
-      await axios.post(
-        `${API}/v1/auth/register`,
-        registerData
-      );
+      const response = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(registerData),
+      });
 
-      setMessage("Registered successfully");
-    } catch (err) {
-      console.log(err.response?.data);
-      setMessage("Registration failed");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
+
+      setMessage("Registration successful");
+
+      setRegisterData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+      });
+    } catch (error) {
+      setMessage(error.message);
     }
   };
 
@@ -110,365 +105,535 @@ function App() {
   // Login
   // =========================
 
-  const login = async () => {
+  const loginUser = async () => {
     try {
-      const res = await axios.post(
-        `${API}/v1/auth/login`,
-        loginData
-      );
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(loginData),
+      });
 
-      const jwtToken = res.data.accessToken;
+      const data = await response.json();
 
-      localStorage.setItem("token", jwtToken);
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
 
       setMessage("Login successful");
-    } catch (err) {
-      console.log(err.response?.data);
-      setMessage("Login failed");
+
+      console.log("Login response:", data);
+    } catch (error) {
+      setMessage(error.message);
     }
+  };
+
+  // =========================
+  // Add Product
+  // =========================
+
+  const addProduct = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/products`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: productData.name,
+          description: productData.description,
+          price: Number(productData.price),
+          quantity: Number(productData.quantity),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add product");
+      }
+
+      setMessage("Product added successfully");
+
+      setProductData({
+        name: "",
+        description: "",
+        price: "",
+        quantity: "",
+      });
+
+      loadProducts();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  // =========================
+  // Delete Product
+  // =========================
+
+  const deleteProduct = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE}/products/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete product");
+      }
+
+      setMessage("Product deleted successfully");
+
+      loadProducts();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  };
+
+  // =========================
+  // Product Selection
+  // =========================
+
+  const handleProductSelection = (event) => {
+    const productId = event.target.value;
+
+    const selectedProduct = products.find(
+      (product) => product.id === Number(productId)
+    );
+
+    setOrderData((prev) => ({
+      ...prev,
+      productId,
+      totalAmount: selectedProduct
+        ? (selectedProduct.price * Number(prev.quantity || 1)).toFixed(2)
+        : "",
+    }));
+  };
+
+  // =========================
+  // Quantity Change
+  // =========================
+
+  const handleQuantityChange = (event) => {
+    const quantity = event.target.value;
+
+    const selectedProduct = products.find(
+      (product) => product.id === Number(orderData.productId)
+    );
+
+    setOrderData((prev) => ({
+      ...prev,
+      quantity,
+      totalAmount: selectedProduct
+        ? (selectedProduct.price * Number(quantity || 0)).toFixed(2)
+        : "",
+    }));
   };
 
   // =========================
   // Create Order
   // =========================
 
-  const calculateOrderTotal = (productName, quantity) => {
-    const selectedProduct = products.find(
-      (product) => product.name === productName
-    );
-
-    if (!selectedProduct) {
-      return 0;
-    }
-
-    return Number((selectedProduct.price * quantity).toFixed(2));
-  };
-
-  const handleOrderProductChange = (e) => {
-    const productName = e.target.value;
-    const quantity = 1;
-
-    setOrderData({
-      ...orderData,
-      productName,
-      quantity,
-      totalAmount: calculateOrderTotal(productName, quantity)
-    });
-  };
-
-  const handleOrderQuantityChange = (e) => {
-    const selectedProduct = products.find(
-      (product) => product.name === orderData.productName
-    );
-
-    let quantity = Number(e.target.value);
-
-    if (quantity < 1 || Number.isNaN(quantity)) {
-      quantity = 1;
-    }
-
-    if (selectedProduct && quantity > selectedProduct.quantity) {
-      quantity = selectedProduct.quantity;
-    }
-
-    setOrderData({
-      ...orderData,
-      quantity,
-      totalAmount: calculateOrderTotal(orderData.productName, quantity)
-    });
-  };
-
   const createOrder = async () => {
     try {
-      const jwtToken = localStorage.getItem("token");
-
-      if (!jwtToken) {
-        setMessage("Please login first");
+      if (!orderData.customerName) {
+        setMessage("Please enter customer name");
         return;
       }
 
-      if (!orderData.productName) {
+      if (!orderData.productId) {
         setMessage("Please select a product");
         return;
       }
 
-      const res = await axios.post(
-        `${API}/v1/users/test/create-order`,
-        orderData,
-        {
-          headers: {
-            Authorization: `Bearer ${jwtToken}`
-          }
-        }
+      if (!orderData.quantity || Number(orderData.quantity) <= 0) {
+        setMessage("Please enter a valid quantity");
+        return;
+      }
+
+      const selectedProduct = products.find(
+        (product) => product.id === Number(orderData.productId)
       );
 
-      setMessage(JSON.stringify(res.data));
-    } catch (err) {
-      console.log(err.response?.data);
-      setMessage("Order creation failed");
+      if (!selectedProduct) {
+        setMessage("Selected product not found");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customerName: orderData.customerName,
+          productName: selectedProduct.name,
+          quantity: Number(orderData.quantity),
+          totalAmount: Number(orderData.totalAmount),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create order");
+      }
+
+      setMessage("Order created successfully");
+
+      setOrderData({
+        customerName: "",
+        productId: "",
+        quantity: 1,
+        totalAmount: "",
+      });
+
+      loadProducts();
+    } catch (error) {
+      setMessage(error.message);
     }
   };
 
   return (
     <div
       style={{
-        padding: "20px",
-        fontFamily: "Arial",
-        maxWidth: "1000px",
-        margin: "auto"
+        maxWidth: "1200px",
+        margin: "0 auto",
+        padding: "30px",
+        fontFamily: "Arial, sans-serif",
       }}
     >
-      <h1>E-Commerce Retail Platform</h1>
+      <h1>Retail Platform</h1>
 
-      {/* ========================= */}
-      {/* Register */}
-      {/* ========================= */}
+      {/* =========================
+          Register
+      ========================= */}
 
-      <h2>Register</h2>
+      <section style={sectionStyle}>
+        <h2>Register</h2>
 
-      <input
-        placeholder="First Name"
-        value={registerData.firstName}
-        onChange={(e) =>
-          setRegisterData({
-            ...registerData,
-            firstName: e.target.value
-          })
-        }
-      />
+        <div style={formRow}>
+          <input
+            placeholder="First Name"
+            value={registerData.firstName}
+            onChange={(e) =>
+              setRegisterData({
+                ...registerData,
+                firstName: e.target.value,
+              })
+            }
+          />
 
-      <input
-        placeholder="Last Name"
-        value={registerData.lastName}
-        onChange={(e) =>
-          setRegisterData({
-            ...registerData,
-            lastName: e.target.value
-          })
-        }
-      />
+          <input
+            placeholder="Last Name"
+            value={registerData.lastName}
+            onChange={(e) =>
+              setRegisterData({
+                ...registerData,
+                lastName: e.target.value,
+              })
+            }
+          />
 
-      <input
-        placeholder="Email"
-        value={registerData.email}
-        onChange={(e) =>
-          setRegisterData({
-            ...registerData,
-            email: e.target.value
-          })
-        }
-      />
+          <input
+            placeholder="Email"
+            value={registerData.email}
+            onChange={(e) =>
+              setRegisterData({
+                ...registerData,
+                email: e.target.value,
+              })
+            }
+          />
 
-      <input
-        placeholder="Password"
-        type="password"
-        value={registerData.password}
-        onChange={(e) =>
-          setRegisterData({
-            ...registerData,
-            password: e.target.value
-          })
-        }
-      />
+          <input
+            type="password"
+            placeholder="Password"
+            value={registerData.password}
+            onChange={(e) =>
+              setRegisterData({
+                ...registerData,
+                password: e.target.value,
+              })
+            }
+          />
 
-      <button onClick={register}>Register</button>
+          <button onClick={registerUser}>Register</button>
+        </div>
+      </section>
 
-      <hr />
+      {/* =========================
+          Login
+      ========================= */}
 
-      {/* ========================= */}
-      {/* Login */}
-      {/* ========================= */}
+      <section style={sectionStyle}>
+        <h2>Login</h2>
 
-      <h2>Login</h2>
+        <div style={formRow}>
+          <input
+            placeholder="Email"
+            value={loginData.email}
+            onChange={(e) =>
+              setLoginData({
+                ...loginData,
+                email: e.target.value,
+              })
+            }
+          />
 
-      <input
-        placeholder="Email"
-        value={loginData.email}
-        onChange={(e) =>
-          setLoginData({
-            ...loginData,
-            email: e.target.value
-          })
-        }
-      />
+          <input
+            type="password"
+            placeholder="Password"
+            value={loginData.password}
+            onChange={(e) =>
+              setLoginData({
+                ...loginData,
+                password: e.target.value,
+              })
+            }
+          />
 
-      <input
-        placeholder="Password"
-        type="password"
-        value={loginData.password}
-        onChange={(e) =>
-          setLoginData({
-            ...loginData,
-            password: e.target.value
-          })
-        }
-      />
+          <button onClick={loginUser}>Login</button>
+        </div>
+      </section>
 
-      <button onClick={login}>Login</button>
+      {/* =========================
+          Products
+      ========================= */}
 
-      <hr />
+      <section style={sectionStyle}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <h2>Products</h2>
 
-      {/* ========================= */}
-      {/* Products */}
-      {/* ========================= */}
+          <button onClick={loadProducts}>Refresh Products</button>
+        </div>
 
-      <h2>Products</h2>
+        <div style={productGrid}>
+          {products.length === 0 ? (
+            <p>No products available.</p>
+          ) : (
+            products.map((product) => (
+              <div key={product.id} style={productCard}>
+                <h3>{product.name}</h3>
 
-      <button onClick={getProducts}>
-        Refresh Products
-      </button>
+                <p>{product.description}</p>
 
-      <div style={{ marginTop: "15px" }}>
-        {products.length === 0 ? (
-          <p>No products found.</p>
-        ) : (
-          products.map((product) => (
-            <div
-              key={product.id}
-              style={{
-                border: "1px solid #ccc",
-                padding: "15px",
-                marginBottom: "10px",
-                borderRadius: "5px"
-              }}
+                <p>
+                  <strong>Price:</strong> ${product.price}
+                </p>
+
+                <p>
+                  <strong>Quantity:</strong> {product.quantity}
+                </p>
+
+                <button onClick={() => deleteProduct(product.id)}>
+                  Delete
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* =========================
+          Add Product
+      ========================= */}
+
+      <section style={sectionStyle}>
+        <h2>Add Product</h2>
+
+        <div style={formRow}>
+          <input
+            placeholder="Product Name"
+            value={productData.name}
+            onChange={(e) =>
+              setProductData({
+                ...productData,
+                name: e.target.value,
+              })
+            }
+          />
+
+          <input
+            placeholder="Description"
+            value={productData.description}
+            onChange={(e) =>
+              setProductData({
+                ...productData,
+                description: e.target.value,
+              })
+            }
+          />
+
+          <div style={fieldGroup}>
+            <label>Price</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={productData.price}
+              onChange={(e) =>
+                setProductData({
+                  ...productData,
+                  price: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <div style={fieldGroup}>
+            <label>Quantity</label>
+            <input
+              type="number"
+              placeholder="1"
+              value={productData.quantity}
+              onChange={(e) =>
+                setProductData({
+                  ...productData,
+                  quantity: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <button onClick={addProduct}>Add Product</button>
+        </div>
+      </section>
+
+      {/* =========================
+          Create Order
+      ========================= */}
+
+      <section style={sectionStyle}>
+        <h2>Create Order</h2>
+
+        <div style={orderForm}>
+          <div style={fieldGroup}>
+            <label>Customer Name</label>
+            <input
+              placeholder="Customer Name"
+              value={orderData.customerName}
+              onChange={(e) =>
+                setOrderData({
+                  ...orderData,
+                  customerName: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <div style={fieldGroup}>
+            <label>Product</label>
+
+            <select
+              value={orderData.productId}
+              onChange={handleProductSelection}
             >
-              <h3>{product.name}</h3>
+              <option value="">Select Product</option>
 
-              <p>{product.description}</p>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name} - ${product.price} ({product.quantity} available)
+                </option>
+              ))}
+            </select>
+          </div>
 
-              <p>
-                <strong>Price:</strong> ${product.price}
-              </p>
+          <div style={fieldGroup}>
+            <label>Quantity</label>
 
-              <p>
-                <strong>Quantity:</strong> {product.quantity}
-              </p>
+            <input
+              type="number"
+              min="1"
+              value={orderData.quantity}
+              onChange={handleQuantityChange}
+            />
+          </div>
 
-              <button
-                onClick={() => deleteProduct(product.id)}
-              >
-                Delete
-              </button>
-            </div>
-          ))
-        )}
-      </div>
+          <div style={fieldGroup}>
+            <label>Total Amount</label>
 
-      <h3>Add Product</h3>
+            <input
+              type="number"
+              value={orderData.totalAmount}
+              readOnly
+              placeholder="0.00"
+            />
+          </div>
 
-      <input
-        placeholder="Product Name"
-        value={productData.name}
-        onChange={(e) =>
-          setProductData({
-            ...productData,
-            name: e.target.value
-          })
-        }
-      />
+          <button onClick={createOrder}>Create Order</button>
+        </div>
+      </section>
 
-      <input
-        placeholder="Description"
-        value={productData.description}
-        onChange={(e) =>
-          setProductData({
-            ...productData,
-            description: e.target.value
-          })
-        }
-      />
+      {/* =========================
+          Message
+      ========================= */}
 
-      <input
-        placeholder="Price"
-        type="number"
-        value={productData.price}
-        onChange={(e) =>
-          setProductData({
-            ...productData,
-            price: Number(e.target.value)
-          })
-        }
-      />
-
-      <input
-        placeholder="Quantity"
-        type="number"
-        value={productData.quantity}
-        onChange={(e) =>
-          setProductData({
-            ...productData,
-            quantity: Number(e.target.value)
-          })
-        }
-      />
-
-      <button onClick={createProduct}>
-        Add Product
-      </button>
-
-      <hr />
-
-      {/* ========================= */}
-      {/* Create Order */}
-      {/* ========================= */}
-
-      <h2>Create Order</h2>
-
-      <input
-        placeholder="Customer Name"
-        value={orderData.customerName}
-        onChange={(e) =>
-          setOrderData({
-            ...orderData,
-            customerName: e.target.value
-          })
-        }
-      />
-
-      <select
-        value={orderData.productName}
-        onChange={handleOrderProductChange}
-      >
-        <option value="">Select Product</option>
-        {products.map((product) => (
-          <option key={product.id} value={product.name}>
-            {product.name} - ${product.price} ({product.quantity} available)
-          </option>
-        ))}
-      </select>
-
-      <input
-        placeholder="Quantity"
-        type="number"
-        min="1"
-        max={
-          products.find(
-            (product) => product.name === orderData.productName
-          )?.quantity || undefined
-        }
-        value={orderData.quantity}
-        onChange={handleOrderQuantityChange}
-        disabled={!orderData.productName}
-      />
-
-      <input
-        placeholder="Amount"
-        type="number"
-        value={orderData.totalAmount}
-        readOnly
-      />
-
-      <button onClick={createOrder}>
-        Create Order
-      </button>
-
-      <hr />
-
-      <p>
-        <strong>{message}</strong>
-      </p>
+      {message && (
+        <div
+          style={{
+            marginTop: "20px",
+            padding: "12px",
+            border: "1px solid #ccc",
+            borderRadius: "5px",
+          }}
+        >
+          {message}
+        </div>
+      )}
     </div>
   );
 }
+
+// =========================
+// Styles
+// =========================
+
+const sectionStyle = {
+  borderBottom: "1px solid #ccc",
+  paddingBottom: "20px",
+  marginBottom: "25px",
+};
+
+const formRow = {
+  display: "flex",
+  alignItems: "flex-end",
+  gap: "8px",
+  flexWrap: "wrap",
+};
+
+const orderForm = {
+  display: "flex",
+  alignItems: "flex-end",
+  gap: "12px",
+  flexWrap: "wrap",
+};
+
+const fieldGroup = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "5px",
+};
+
+const productGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+  gap: "20px",
+  marginTop: "20px",
+};
+
+const productCard = {
+  border: "1px solid #ccc",
+  borderRadius: "8px",
+  padding: "20px",
+  minHeight: "180px",
+};
 
 export default App;
