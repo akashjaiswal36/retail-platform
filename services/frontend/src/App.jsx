@@ -21,7 +21,6 @@ function App() {
 
   const [productData, setProductData] = useState({
     name: "",
-    description: "",
     price: "",
     quantity: "",
   });
@@ -130,7 +129,11 @@ function App() {
 
       await axios.post(`${API}/v1/products`, {
         name: productData.name,
-        description: productData.description,
+
+        // Backend still supports description,
+        // but we don't expose it in the UI.
+        description: "",
+
         price: Number(productData.price),
         quantity: Number(productData.quantity),
       });
@@ -139,7 +142,6 @@ function App() {
 
       setProductData({
         name: "",
-        description: "",
         price: "",
         quantity: "",
       });
@@ -161,7 +163,6 @@ function App() {
 
       showMessage("Product deleted successfully");
 
-      // If deleted product was selected in order section
       if (selectedProduct?.id === id) {
         setSelectedProduct(null);
 
@@ -223,7 +224,10 @@ function App() {
       quantity = 1;
     }
 
-    if (selectedProduct && quantity > selectedProduct.quantity) {
+    if (
+      selectedProduct &&
+      quantity > selectedProduct.quantity
+    ) {
       quantity = selectedProduct.quantity;
     }
 
@@ -309,6 +313,7 @@ function App() {
         <h1>E-Commerce Retail Platform</h1>
       </header>
 
+
       {/* REGISTER + LOGIN */}
 
       <section className="auth-section">
@@ -374,6 +379,7 @@ function App() {
           </div>
         </div>
 
+
         <div className="auth-box">
           <h2>Login</h2>
 
@@ -415,11 +421,13 @@ function App() {
 
       </section>
 
+
       {/* PRODUCTS */}
 
       <section className="section">
 
         <div className="section-header">
+
           <h2>Products</h2>
 
           <button
@@ -428,15 +436,20 @@ function App() {
           >
             Refresh Products
           </button>
+
         </div>
+
 
         <div className="product-grid">
 
           {products.length === 0 ? (
+
             <div className="empty">
               No products available
             </div>
+
           ) : (
+
             products.map((product) => {
 
               const totalValue =
@@ -444,6 +457,7 @@ function App() {
                 Number(product.quantity);
 
               return (
+
                 <div
                   className="product-card"
                   key={product.id}
@@ -455,24 +469,39 @@ function App() {
 
                     <div className="product-details">
 
-                      <div>
+                      <div className="product-detail">
                         <span>Price</span>
+
                         <strong>
-                          ${Number(product.price).toFixed(2)}
+                          $
+                          {Number(product.price).toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
                         </strong>
                       </div>
 
-                      <div>
-                        <span>Quantity Available</span>
+
+                      <div className="product-detail">
+                        <span>Quantity</span>
+
                         <strong>
-                          {product.quantity.toLocaleString()}
+                          {Number(
+                            product.quantity
+                          ).toLocaleString()}
                         </strong>
                       </div>
 
-                      <div>
+
+                      <div className="product-detail">
                         <span>Total Value</span>
+
                         <strong>
-                          ${totalValue.toLocaleString(
+                          $
+                          {totalValue.toLocaleString(
                             undefined,
                             {
                               minimumFractionDigits: 2,
@@ -486,6 +515,7 @@ function App() {
 
                   </div>
 
+
                   <button
                     className="btn btn-danger delete-btn"
                     onClick={() =>
@@ -496,13 +526,16 @@ function App() {
                   </button>
 
                 </div>
+
               );
             })
+
           )}
 
         </div>
 
       </section>
+
 
       {/* ADD PRODUCT */}
 
@@ -513,8 +546,11 @@ function App() {
         <div className="add-product-card">
 
           <div className="field">
+
+            <label>Product Name</label>
+
             <input
-              placeholder="Product Name"
+              placeholder="Enter product name"
               value={productData.name}
               onChange={(e) =>
                 setProductData({
@@ -523,24 +559,16 @@ function App() {
                 })
               }
             />
+
           </div>
 
-          <div className="field">
-            <input
-              placeholder="Description"
-              value={productData.description}
-              onChange={(e) =>
-                setProductData({
-                  ...productData,
-                  description: e.target.value,
-                })
-              }
-            />
-          </div>
 
           <div className="field">
+
+            <label>Price (USD)</label>
+
             <input
-              placeholder="Price"
+              placeholder="0.00"
               type="number"
               min="0"
               step="0.01"
@@ -553,12 +581,15 @@ function App() {
               }
             />
 
-            <small>Enter price in USD</small>
           </div>
 
+
           <div className="field">
+
+            <label>Quantity</label>
+
             <input
-              placeholder="Quantity"
+              placeholder="0"
               type="number"
               min="1"
               value={productData.quantity}
@@ -570,11 +601,11 @@ function App() {
               }
             />
 
-            <small>Enter available quantity</small>
           </div>
 
+
           <button
-            className="btn btn-success"
+            className="btn btn-success add-product-btn"
             onClick={addProduct}
           >
             Add Product
@@ -583,6 +614,7 @@ function App() {
         </div>
 
       </section>
+
 
       {/* CREATE ORDER */}
 
@@ -611,6 +643,7 @@ function App() {
 
           </div>
 
+
           {/* PRODUCT */}
 
           <div className="order-field">
@@ -629,6 +662,7 @@ function App() {
               </option>
 
               {products.map((product) => (
+
                 <option
                   key={product.id}
                   value={product.id}
@@ -636,15 +670,17 @@ function App() {
                   {product.name} - $
                   {Number(product.price).toFixed(2)}
                 </option>
+
               ))}
 
             </select>
 
             <small>
-              Choose a product from the list
+              Choose a product
             </small>
 
           </div>
+
 
           {/* QUANTITY */}
 
@@ -655,7 +691,10 @@ function App() {
             <input
               type="number"
               min="1"
-              max={selectedProduct?.quantity || undefined}
+              max={
+                selectedProduct?.quantity ||
+                undefined
+              }
               value={orderData.quantity}
               onChange={(e) =>
                 changeOrderQuantity(e.target.value)
@@ -663,17 +702,13 @@ function App() {
             />
 
             <small>
-              Number of units you want to order
-              {selectedProduct && (
-                <>
-                  {" "}
-                  (Max available:{" "}
-                  {selectedProduct.quantity})
-                </>
-              )}
+              {selectedProduct
+                ? `Max: ${selectedProduct.quantity}`
+                : "Number of units"}
             </small>
 
           </div>
+
 
           {/* UNIT PRICE */}
 
@@ -694,10 +729,11 @@ function App() {
             />
 
             <small>
-              Price per unit (auto-filled)
+              Auto-filled
             </small>
 
           </div>
+
 
           {/* TOTAL */}
 
@@ -719,7 +755,8 @@ function App() {
 
           </div>
 
-          {/* BUTTON */}
+
+          {/* CREATE ORDER BUTTON */}
 
           <button
             className="btn btn-success create-order-btn"
@@ -732,9 +769,11 @@ function App() {
 
       </section>
 
+
       {/* MESSAGE */}
 
       {message && (
+
         <div
           className={`message ${
             messageType === "error"
@@ -742,6 +781,7 @@ function App() {
               : "message-success"
           }`}
         >
+
           <span>{message}</span>
 
           <button
@@ -749,7 +789,9 @@ function App() {
           >
             ×
           </button>
+
         </div>
+
       )}
 
     </div>
