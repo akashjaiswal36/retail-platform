@@ -453,10 +453,6 @@ function App() {
 
                     <h3>{product.name}</h3>
 
-                    <p className="description">
-                      {product.description || "No description"}
-                    </p>
-
                     <div className="product-details">
 
                       <div>
