@@ -132,12 +132,63 @@ function App() {
   // Create Order
   // =========================
 
+  const calculateOrderTotal = (productName, quantity) => {
+    const selectedProduct = products.find(
+      (product) => product.name === productName
+    );
+
+    if (!selectedProduct) {
+      return 0;
+    }
+
+    return Number((selectedProduct.price * quantity).toFixed(2));
+  };
+
+  const handleOrderProductChange = (e) => {
+    const productName = e.target.value;
+    const quantity = 1;
+
+    setOrderData({
+      ...orderData,
+      productName,
+      quantity,
+      totalAmount: calculateOrderTotal(productName, quantity)
+    });
+  };
+
+  const handleOrderQuantityChange = (e) => {
+    const selectedProduct = products.find(
+      (product) => product.name === orderData.productName
+    );
+
+    let quantity = Number(e.target.value);
+
+    if (quantity < 1 || Number.isNaN(quantity)) {
+      quantity = 1;
+    }
+
+    if (selectedProduct && quantity > selectedProduct.quantity) {
+      quantity = selectedProduct.quantity;
+    }
+
+    setOrderData({
+      ...orderData,
+      quantity,
+      totalAmount: calculateOrderTotal(orderData.productName, quantity)
+    });
+  };
+
   const createOrder = async () => {
     try {
       const jwtToken = localStorage.getItem("token");
 
       if (!jwtToken) {
         setMessage("Please login first");
+        return;
+      }
+
+      if (!orderData.productName) {
+        setMessage("Please select a product");
         return;
       }
 
@@ -374,39 +425,37 @@ function App() {
         }
       />
 
-      <input
-        placeholder="Product Name"
+      <select
         value={orderData.productName}
-        onChange={(e) =>
-          setOrderData({
-            ...orderData,
-            productName: e.target.value
-          })
-        }
-      />
+        onChange={handleOrderProductChange}
+      >
+        <option value="">Select Product</option>
+        {products.map((product) => (
+          <option key={product.id} value={product.name}>
+            {product.name} - ${product.price} ({product.quantity} available)
+          </option>
+        ))}
+      </select>
 
       <input
         placeholder="Quantity"
         type="number"
-        value={orderData.quantity}
-        onChange={(e) =>
-          setOrderData({
-            ...orderData,
-            quantity: Number(e.target.value)
-          })
+        min="1"
+        max={
+          products.find(
+            (product) => product.name === orderData.productName
+          )?.quantity || undefined
         }
+        value={orderData.quantity}
+        onChange={handleOrderQuantityChange}
+        disabled={!orderData.productName}
       />
 
       <input
         placeholder="Amount"
         type="number"
         value={orderData.totalAmount}
-        onChange={(e) =>
-          setOrderData({
-            ...orderData,
-            totalAmount: Number(e.target.value)
-          })
-        }
+        readOnly
       />
 
       <button onClick={createOrder}>
