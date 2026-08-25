@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
+import "./index.css";
 
-const API_BASE = "/api/v1";
+const API = "/api";
 
 function App() {
-  const [products, setProducts] = useState([]);
-  const [message, setMessage] = useState("");
-
   const [registerData, setRegisterData] = useState({
     firstName: "",
     lastName: "",
@@ -18,6 +17,8 @@ function App() {
     password: "",
   });
 
+  const [products, setProducts] = useState([]);
+
   const [productData, setProductData] = useState({
     name: "",
     description: "",
@@ -27,68 +28,34 @@ function App() {
 
   const [orderData, setOrderData] = useState({
     customerName: "",
-    productId: "",
+    productName: "",
     quantity: 1,
-    totalAmount: "",
+    totalAmount: 0,
   });
 
-  // =========================
-  // Load Products
-  // =========================
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const loadProducts = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/products`);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
 
-      if (!response.ok) {
-        throw new Error("Failed to load products");
-      }
+  // --------------------------------------------------
+  // MESSAGE
+  // --------------------------------------------------
 
-      const data = await response.json();
-      setProducts(data);
-
-      // Clear selected product if it no longer exists
-      if (
-        orderData.productId &&
-        !data.some((product) => product.id === Number(orderData.productId))
-      ) {
-        setOrderData((prev) => ({
-          ...prev,
-          productId: "",
-          totalAmount: "",
-        }));
-      }
-    } catch (error) {
-      setMessage("Failed to load products");
-      console.error(error);
-    }
+  const showMessage = (text, type = "success") => {
+    setMessage(text);
+    setMessageType(type);
   };
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  // --------------------------------------------------
+  // REGISTER
+  // --------------------------------------------------
 
-  // =========================
-  // Register
-  // =========================
-
-  const registerUser = async () => {
+  const register = async () => {
     try {
-      const response = await fetch(`${API_BASE}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(registerData),
-      });
+      await axios.post(`${API}/v1/auth/register`, registerData);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
-
-      setMessage("Registration successful");
+      showMessage("Registration successful");
 
       setRegisterData({
         firstName: "",
@@ -96,65 +63,79 @@ function App() {
         email: "",
         password: "",
       });
-    } catch (error) {
-      setMessage(error.message);
+    } catch (err) {
+      console.log(err.response?.data);
+      showMessage("Registration failed", "error");
     }
   };
 
-  // =========================
-  // Login
-  // =========================
+  // --------------------------------------------------
+  // LOGIN
+  // --------------------------------------------------
 
-  const loginUser = async () => {
+  const login = async () => {
     try {
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(loginData),
-      });
+      const res = await axios.post(
+        `${API}/v1/auth/login`,
+        loginData
+      );
 
-      const data = await response.json();
+      const jwtToken = res.data.accessToken;
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
+      localStorage.setItem("token", jwtToken);
 
-      setMessage("Login successful");
-
-      console.log("Login response:", data);
-    } catch (error) {
-      setMessage(error.message);
+      showMessage("Login successful");
+    } catch (err) {
+      console.log(err.response?.data);
+      showMessage("Login failed", "error");
     }
   };
 
-  // =========================
-  // Add Product
-  // =========================
+  // --------------------------------------------------
+  // GET PRODUCTS
+  // --------------------------------------------------
+
+  const loadProducts = async () => {
+    try {
+      const res = await axios.get(`${API}/v1/products`);
+
+      setProducts(res.data);
+    } catch (err) {
+      console.log(err.response?.data);
+      showMessage("Unable to load products", "error");
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  // --------------------------------------------------
+  // ADD PRODUCT
+  // --------------------------------------------------
 
   const addProduct = async () => {
     try {
-      const response = await fetch(`${API_BASE}/products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: productData.name,
-          description: productData.description,
-          price: Number(productData.price),
-          quantity: Number(productData.quantity),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to add product");
+      if (
+        !productData.name ||
+        !productData.price ||
+        !productData.quantity
+      ) {
+        showMessage(
+          "Please enter product name, price and quantity",
+          "error"
+        );
+        return;
       }
 
-      setMessage("Product added successfully");
+      await axios.post(`${API}/v1/products`, {
+        name: productData.name,
+        description: productData.description,
+        price: Number(productData.price),
+        quantity: Number(productData.quantity),
+      });
+
+      showMessage("Product added successfully");
 
       setProductData({
         name: "",
@@ -164,320 +145,409 @@ function App() {
       });
 
       loadProducts();
-    } catch (error) {
-      setMessage(error.message);
+    } catch (err) {
+      console.log(err.response?.data);
+      showMessage("Failed to add product", "error");
     }
   };
 
-  // =========================
-  // Delete Product
-  // =========================
+  // --------------------------------------------------
+  // DELETE PRODUCT
+  // --------------------------------------------------
 
   const deleteProduct = async (id) => {
     try {
-      const response = await fetch(`${API_BASE}/products/${id}`, {
-        method: "DELETE",
-      });
+      await axios.delete(`${API}/v1/products/${id}`);
 
-      if (!response.ok) {
-        throw new Error("Failed to delete product");
+      showMessage("Product deleted successfully");
+
+      // If deleted product was selected in order section
+      if (selectedProduct?.id === id) {
+        setSelectedProduct(null);
+
+        setOrderData({
+          ...orderData,
+          productName: "",
+          totalAmount: 0,
+        });
       }
 
-      setMessage("Product deleted successfully");
-
       loadProducts();
-    } catch (error) {
-      setMessage(error.message);
+    } catch (err) {
+      console.log(err.response?.data);
+      showMessage("Failed to delete product", "error");
     }
   };
 
-  // =========================
-  // Product Selection
-  // =========================
+  // --------------------------------------------------
+  // SELECT PRODUCT FOR ORDER
+  // --------------------------------------------------
 
-  const handleProductSelection = (event) => {
-    const productId = event.target.value;
-
-    const selectedProduct = products.find(
-      (product) => product.id === Number(productId)
+  const selectProduct = (productId) => {
+    const product = products.find(
+      (item) => String(item.id) === String(productId)
     );
 
-    setOrderData((prev) => ({
-      ...prev,
-      productId,
-      totalAmount: selectedProduct
-        ? (selectedProduct.price * Number(prev.quantity || 1)).toFixed(2)
-        : "",
-    }));
-  };
+    if (!product) {
+      setSelectedProduct(null);
 
-  // =========================
-  // Quantity Change
-  // =========================
+      setOrderData({
+        ...orderData,
+        productName: "",
+        totalAmount: 0,
+      });
 
-  const handleQuantityChange = (event) => {
-    const quantity = event.target.value;
+      return;
+    }
 
-    const selectedProduct = products.find(
-      (product) => product.id === Number(orderData.productId)
-    );
+    setSelectedProduct(product);
 
-    setOrderData((prev) => ({
-      ...prev,
+    const quantity = 1;
+
+    setOrderData({
+      ...orderData,
+      productName: product.name,
       quantity,
-      totalAmount: selectedProduct
-        ? (selectedProduct.price * Number(quantity || 0)).toFixed(2)
-        : "",
-    }));
+      totalAmount: Number(product.price) * quantity,
+    });
   };
 
-  // =========================
-  // Create Order
-  // =========================
+  // --------------------------------------------------
+  // ORDER QUANTITY CHANGE
+  // --------------------------------------------------
+
+  const changeOrderQuantity = (value) => {
+    let quantity = Number(value);
+
+    if (quantity < 1 || Number.isNaN(quantity)) {
+      quantity = 1;
+    }
+
+    if (selectedProduct && quantity > selectedProduct.quantity) {
+      quantity = selectedProduct.quantity;
+    }
+
+    const totalAmount = selectedProduct
+      ? Number(selectedProduct.price) * quantity
+      : 0;
+
+    setOrderData({
+      ...orderData,
+      quantity,
+      totalAmount,
+    });
+  };
+
+  // --------------------------------------------------
+  // CREATE ORDER
+  // --------------------------------------------------
 
   const createOrder = async () => {
     try {
+      const jwtToken = localStorage.getItem("token");
+
+      if (!jwtToken) {
+        showMessage("Please login first", "error");
+        return;
+      }
+
       if (!orderData.customerName) {
-        setMessage("Please enter customer name");
+        showMessage("Please enter customer name", "error");
         return;
       }
-
-      if (!orderData.productId) {
-        setMessage("Please select a product");
-        return;
-      }
-
-      if (!orderData.quantity || Number(orderData.quantity) <= 0) {
-        setMessage("Please enter a valid quantity");
-        return;
-      }
-
-      const selectedProduct = products.find(
-        (product) => product.id === Number(orderData.productId)
-      );
 
       if (!selectedProduct) {
-        setMessage("Selected product not found");
+        showMessage("Please select a product", "error");
         return;
       }
 
-      const response = await fetch(`${API_BASE}/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customerName: orderData.customerName,
-          productName: selectedProduct.name,
-          quantity: Number(orderData.quantity),
-          totalAmount: Number(orderData.totalAmount),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to create order");
+      if (orderData.quantity < 1) {
+        showMessage("Quantity must be at least 1", "error");
+        return;
       }
 
-      setMessage("Order created successfully");
+      const res = await axios.post(
+        `${API}/v1/users/test/create-order`,
+        orderData,
+        {
+          headers: {
+            Authorization: `Bearer ${jwtToken}`,
+          },
+        }
+      );
+
+      showMessage(
+        `Order created successfully. Order ID: ${res.data.id}`
+      );
 
       setOrderData({
         customerName: "",
-        productId: "",
+        productName: "",
         quantity: 1,
-        totalAmount: "",
+        totalAmount: 0,
       });
 
+      setSelectedProduct(null);
+
       loadProducts();
-    } catch (error) {
-      setMessage(error.message);
+    } catch (err) {
+      console.log(err.response?.data);
+      showMessage("Order creation failed", "error");
     }
   };
 
+  // --------------------------------------------------
+  // RENDER
+  // --------------------------------------------------
+
   return (
-    <div
-      style={{
-        maxWidth: "1200px",
-        margin: "0 auto",
-        padding: "30px",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
-      <h1>Retail Platform</h1>
+    <div className="app">
 
-      {/* =========================
-          Register
-      ========================= */}
+      {/* HEADER */}
 
-      <section style={sectionStyle}>
-        <h2>Register</h2>
+      <header className="header">
+        <h1>E-Commerce Retail Platform</h1>
+      </header>
 
-        <div style={formRow}>
-          <input
-            placeholder="First Name"
-            value={registerData.firstName}
-            onChange={(e) =>
-              setRegisterData({
-                ...registerData,
-                firstName: e.target.value,
-              })
-            }
-          />
+      {/* REGISTER + LOGIN */}
 
-          <input
-            placeholder="Last Name"
-            value={registerData.lastName}
-            onChange={(e) =>
-              setRegisterData({
-                ...registerData,
-                lastName: e.target.value,
-              })
-            }
-          />
+      <section className="auth-section">
 
-          <input
-            placeholder="Email"
-            value={registerData.email}
-            onChange={(e) =>
-              setRegisterData({
-                ...registerData,
-                email: e.target.value,
-              })
-            }
-          />
+        <div className="auth-box">
+          <h2>Register</h2>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={registerData.password}
-            onChange={(e) =>
-              setRegisterData({
-                ...registerData,
-                password: e.target.value,
-              })
-            }
-          />
+          <div className="form-row">
 
-          <button onClick={registerUser}>Register</button>
+            <input
+              placeholder="First Name"
+              value={registerData.firstName}
+              onChange={(e) =>
+                setRegisterData({
+                  ...registerData,
+                  firstName: e.target.value,
+                })
+              }
+            />
+
+            <input
+              placeholder="Last Name"
+              value={registerData.lastName}
+              onChange={(e) =>
+                setRegisterData({
+                  ...registerData,
+                  lastName: e.target.value,
+                })
+              }
+            />
+
+            <input
+              placeholder="Email"
+              type="email"
+              value={registerData.email}
+              onChange={(e) =>
+                setRegisterData({
+                  ...registerData,
+                  email: e.target.value,
+                })
+              }
+            />
+
+            <input
+              placeholder="Password"
+              type="password"
+              value={registerData.password}
+              onChange={(e) =>
+                setRegisterData({
+                  ...registerData,
+                  password: e.target.value,
+                })
+              }
+            />
+
+            <button
+              className="btn btn-primary"
+              onClick={register}
+            >
+              Register
+            </button>
+
+          </div>
         </div>
+
+        <div className="auth-box">
+          <h2>Login</h2>
+
+          <div className="form-row">
+
+            <input
+              placeholder="Email"
+              type="email"
+              value={loginData.email}
+              onChange={(e) =>
+                setLoginData({
+                  ...loginData,
+                  email: e.target.value,
+                })
+              }
+            />
+
+            <input
+              placeholder="Password"
+              type="password"
+              value={loginData.password}
+              onChange={(e) =>
+                setLoginData({
+                  ...loginData,
+                  password: e.target.value,
+                })
+              }
+            />
+
+            <button
+              className="btn btn-primary"
+              onClick={login}
+            >
+              Login
+            </button>
+
+          </div>
+        </div>
+
       </section>
 
-      {/* =========================
-          Login
-      ========================= */}
+      {/* PRODUCTS */}
 
-      <section style={sectionStyle}>
-        <h2>Login</h2>
+      <section className="section">
 
-        <div style={formRow}>
-          <input
-            placeholder="Email"
-            value={loginData.email}
-            onChange={(e) =>
-              setLoginData({
-                ...loginData,
-                email: e.target.value,
-              })
-            }
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={loginData.password}
-            onChange={(e) =>
-              setLoginData({
-                ...loginData,
-                password: e.target.value,
-              })
-            }
-          />
-
-          <button onClick={loginUser}>Login</button>
-        </div>
-      </section>
-
-      {/* =========================
-          Products
-      ========================= */}
-
-      <section style={sectionStyle}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div className="section-header">
           <h2>Products</h2>
 
-          <button onClick={loadProducts}>Refresh Products</button>
+          <button
+            className="btn btn-blue"
+            onClick={loadProducts}
+          >
+            Refresh Products
+          </button>
         </div>
 
-        <div style={productGrid}>
+        <div className="product-grid">
+
           {products.length === 0 ? (
-            <p>No products available.</p>
+            <div className="empty">
+              No products available
+            </div>
           ) : (
-            products.map((product) => (
-              <div key={product.id} style={productCard}>
-                <h3>{product.name}</h3>
+            products.map((product) => {
 
-                <p>{product.description}</p>
+              const totalValue =
+                Number(product.price) *
+                Number(product.quantity);
 
-                <p>
-                  <strong>Price:</strong> ${product.price}
-                </p>
+              return (
+                <div
+                  className="product-card"
+                  key={product.id}
+                >
 
-                <p>
-                  <strong>Quantity:</strong> {product.quantity}
-                </p>
+                  <div className="product-info">
 
-                <button onClick={() => deleteProduct(product.id)}>
-                  Delete
-                </button>
-              </div>
-            ))
+                    <h3>{product.name}</h3>
+
+                    <p className="description">
+                      {product.description || "No description"}
+                    </p>
+
+                    <div className="product-details">
+
+                      <div>
+                        <span>Price</span>
+                        <strong>
+                          ${Number(product.price).toFixed(2)}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Quantity Available</span>
+                        <strong>
+                          {product.quantity.toLocaleString()}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Total Value</span>
+                        <strong>
+                          ${totalValue.toLocaleString(
+                            undefined,
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </strong>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  <button
+                    className="btn btn-danger delete-btn"
+                    onClick={() =>
+                      deleteProduct(product.id)
+                    }
+                  >
+                    Delete
+                  </button>
+
+                </div>
+              );
+            })
           )}
+
         </div>
+
       </section>
 
-      {/* =========================
-          Add Product
-      ========================= */}
+      {/* ADD PRODUCT */}
 
-      <section style={sectionStyle}>
+      <section className="section">
+
         <h2>Add Product</h2>
 
-        <div style={formRow}>
-          <input
-            placeholder="Product Name"
-            value={productData.name}
-            onChange={(e) =>
-              setProductData({
-                ...productData,
-                name: e.target.value,
-              })
-            }
-          />
+        <div className="add-product-card">
 
-          <input
-            placeholder="Description"
-            value={productData.description}
-            onChange={(e) =>
-              setProductData({
-                ...productData,
-                description: e.target.value,
-              })
-            }
-          />
-
-          <div style={fieldGroup}>
-            <label>Price</label>
+          <div className="field">
             <input
+              placeholder="Product Name"
+              value={productData.name}
+              onChange={(e) =>
+                setProductData({
+                  ...productData,
+                  name: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <div className="field">
+            <input
+              placeholder="Description"
+              value={productData.description}
+              onChange={(e) =>
+                setProductData({
+                  ...productData,
+                  description: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <div className="field">
+            <input
+              placeholder="Price"
               type="number"
+              min="0"
               step="0.01"
-              placeholder="0.00"
               value={productData.price}
               onChange={(e) =>
                 setProductData({
@@ -486,13 +556,15 @@ function App() {
                 })
               }
             />
+
+            <small>Enter price in USD</small>
           </div>
 
-          <div style={fieldGroup}>
-            <label>Quantity</label>
+          <div className="field">
             <input
+              placeholder="Quantity"
               type="number"
-              placeholder="1"
+              min="1"
               value={productData.quantity}
               onChange={(e) =>
                 setProductData({
@@ -501,24 +573,37 @@ function App() {
                 })
               }
             />
+
+            <small>Enter available quantity</small>
           </div>
 
-          <button onClick={addProduct}>Add Product</button>
+          <button
+            className="btn btn-success"
+            onClick={addProduct}
+          >
+            Add Product
+          </button>
+
         </div>
+
       </section>
 
-      {/* =========================
-          Create Order
-      ========================= */}
+      {/* CREATE ORDER */}
 
-      <section style={sectionStyle}>
+      <section className="section">
+
         <h2>Create Order</h2>
 
-        <div style={orderForm}>
-          <div style={fieldGroup}>
+        <div className="order-card">
+
+          {/* CUSTOMER */}
+
+          <div className="order-field">
+
             <label>Customer Name</label>
+
             <input
-              placeholder="Customer Name"
+              placeholder="Enter customer name"
               value={orderData.customerName}
               onChange={(e) =>
                 setOrderData({
@@ -527,113 +612,152 @@ function App() {
                 })
               }
             />
+
           </div>
 
-          <div style={fieldGroup}>
-            <label>Product</label>
+          {/* PRODUCT */}
+
+          <div className="order-field">
+
+            <label>Select Product</label>
 
             <select
-              value={orderData.productId}
-              onChange={handleProductSelection}
+              value={selectedProduct?.id || ""}
+              onChange={(e) =>
+                selectProduct(e.target.value)
+              }
             >
-              <option value="">Select Product</option>
+
+              <option value="">
+                -- Select Product --
+              </option>
 
               {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name} - ${product.price} ({product.quantity} available)
+                <option
+                  key={product.id}
+                  value={product.id}
+                >
+                  {product.name} - $
+                  {Number(product.price).toFixed(2)}
                 </option>
               ))}
+
             </select>
+
+            <small>
+              Choose a product from the list
+            </small>
+
           </div>
 
-          <div style={fieldGroup}>
+          {/* QUANTITY */}
+
+          <div className="order-field">
+
             <label>Quantity</label>
 
             <input
               type="number"
               min="1"
+              max={selectedProduct?.quantity || undefined}
               value={orderData.quantity}
-              onChange={handleQuantityChange}
+              onChange={(e) =>
+                changeOrderQuantity(e.target.value)
+              }
             />
+
+            <small>
+              Number of units you want to order
+              {selectedProduct && (
+                <>
+                  {" "}
+                  (Max available:{" "}
+                  {selectedProduct.quantity})
+                </>
+              )}
+            </small>
+
           </div>
 
-          <div style={fieldGroup}>
-            <label>Total Amount</label>
+          {/* UNIT PRICE */}
+
+          <div className="order-field">
+
+            <label>Unit Price (USD)</label>
 
             <input
-              type="number"
-              value={orderData.totalAmount}
+              type="text"
+              value={
+                selectedProduct
+                  ? `$${Number(
+                      selectedProduct.price
+                    ).toFixed(2)}`
+                  : "$0.00"
+              }
               readOnly
-              placeholder="0.00"
             />
+
+            <small>
+              Price per unit (auto-filled)
+            </small>
+
           </div>
 
-          <button onClick={createOrder}>Create Order</button>
+          {/* TOTAL */}
+
+          <div className="order-field">
+
+            <label>Total Amount (USD)</label>
+
+            <input
+              type="text"
+              value={`$${Number(
+                orderData.totalAmount || 0
+              ).toFixed(2)}`}
+              readOnly
+            />
+
+            <small>
+              Quantity × Unit Price
+            </small>
+
+          </div>
+
+          {/* BUTTON */}
+
+          <button
+            className="btn btn-success create-order-btn"
+            onClick={createOrder}
+          >
+            Create Order
+          </button>
+
         </div>
+
       </section>
 
-      {/* =========================
-          Message
-      ========================= */}
+      {/* MESSAGE */}
 
       {message && (
         <div
-          style={{
-            marginTop: "20px",
-            padding: "12px",
-            border: "1px solid #ccc",
-            borderRadius: "5px",
-          }}
+          className={`message ${
+            messageType === "error"
+              ? "message-error"
+              : "message-success"
+          }`}
         >
-          {message}
+          <span>{message}</span>
+
+          <button
+            onClick={() => setMessage("")}
+          >
+            ×
+          </button>
         </div>
       )}
+
     </div>
   );
 }
-
-// =========================
-// Styles
-// =========================
-
-const sectionStyle = {
-  borderBottom: "1px solid #ccc",
-  paddingBottom: "20px",
-  marginBottom: "25px",
-};
-
-const formRow = {
-  display: "flex",
-  alignItems: "flex-end",
-  gap: "8px",
-  flexWrap: "wrap",
-};
-
-const orderForm = {
-  display: "flex",
-  alignItems: "flex-end",
-  gap: "12px",
-  flexWrap: "wrap",
-};
-
-const fieldGroup = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "5px",
-};
-
-const productGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-  gap: "20px",
-  marginTop: "20px",
-};
-
-const productCard = {
-  border: "1px solid #ccc",
-  borderRadius: "8px",
-  padding: "20px",
-  minHeight: "180px",
-};
 
 export default App;
